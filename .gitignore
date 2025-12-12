@@ -26,3 +26,6 @@ npm-debug.log*
 
 # Test
 coverage/
+
+# Test results
+functions/nuro-invoice/result/
