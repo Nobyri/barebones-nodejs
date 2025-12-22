@@ -3,6 +3,8 @@ node_modules/
 
 # Build output
 *.zip
+.aws-sam/
+samconfig.toml
 
 # Environment variables
 .env
@@ -29,3 +31,4 @@ coverage/
 
 # Test results
 functions/nuro-invoice/result/
+functions/gmail-attachment/result/

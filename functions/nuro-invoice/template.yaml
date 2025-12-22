@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: NURO Invoice PDF Downloader
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+
+Resources:
+  NuroInvoiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: index.handler
+      Description: NURO光の請求書PDFを取得するLambda関数
+      Environment:
+        Variables:
+          NODE_ENV: production
+      Events:
+        InvoiceApi:
+          Type: Api
+          Properties:
+            Path: /invoice
+            Method: post
+            Auth:
+              ApiKeyRequired: true
+
+  # API Gateway API Key
+  NuroInvoiceApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: NuroInvoiceApiKey
+      Description: API Key for NURO Invoice API
+      Enabled: true
+
+  # API Gateway Usage Plan
+  NuroInvoiceUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: ServerlessRestApiProdStage
+    Properties:
+      UsagePlanName: NuroInvoiceUsagePlan
+      Description: Usage plan for NURO Invoice API
+      ApiStages:
+        - ApiId: !Ref ServerlessRestApi
+          Stage: Prod
+      Throttle:
+        RateLimit: 10
+        BurstLimit: 20
+      Quota:
+        Limit: 1000
+        Period: MONTH
+
+  # Link API Key to Usage Plan
+  NuroInvoiceUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref NuroInvoiceApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref NuroInvoiceUsagePlan
+
+Outputs:
+  NuroInvoiceApi:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/invoice"
+
+  NuroInvoiceFunctionArn:
+    Description: "NURO Invoice Lambda Function ARN"
+    Value: !GetAtt NuroInvoiceFunction.Arn
+
+  ApiKeyId:
+    Description: "API Key ID (use 'aws apigateway get-api-key --api-key <ID> --include-value' to get the key)"
+    Value: !Ref NuroInvoiceApiKey

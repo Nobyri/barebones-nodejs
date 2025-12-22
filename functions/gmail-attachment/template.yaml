@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Gmail Attachment Retrieval Lambda
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+
+Resources:
+  GmailAttachmentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: index.handler
+      Description: Gmailから添付ファイルを取得するLambda関数
+      Environment:
+        Variables:
+          NODE_ENV: production
+          SECRETS_NAME: gmail-oauth-credentials
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:gmail-oauth-credentials-*'
+      Events:
+        AttachmentApi:
+          Type: Api
+          Properties:
+            Path: /gmail/attachments
+            Method: post
+            Auth:
+              ApiKeyRequired: true
+
+  # API Gateway API Key
+  GmailAttachmentApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: GmailAttachmentApiKey
+      Description: API Key for Gmail Attachment API
+      Enabled: true
+
+  # API Gateway Usage Plan
+  GmailAttachmentUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: ServerlessRestApiProdStage
+    Properties:
+      UsagePlanName: GmailAttachmentUsagePlan
+      Description: Usage plan for Gmail Attachment API
+      ApiStages:
+        - ApiId: !Ref ServerlessRestApi
+          Stage: Prod
+      Throttle:
+        RateLimit: 10
+        BurstLimit: 20
+      Quota:
+        Limit: 1000
+        Period: MONTH
+
+  # Link API Key to Usage Plan
+  GmailAttachmentUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref GmailAttachmentApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref GmailAttachmentUsagePlan
+
+Outputs:
+  GmailAttachmentApi:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/gmail/attachments"
+
+  GmailAttachmentFunctionArn:
+    Description: "Gmail Attachment Lambda Function ARN"
+    Value: !GetAtt GmailAttachmentFunction.Arn
+
+  ApiKeyId:
+    Description: "API Key ID (use 'aws apigateway get-api-key --api-key <ID> --include-value' to get the key)"
+    Value: !Ref GmailAttachmentApiKey

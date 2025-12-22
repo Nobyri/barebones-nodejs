@@ -113,11 +113,12 @@ export const handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${fileName}"`
+        'Content-Type': 'application/json'
       },
-      isBase64Encoded: true,
-      body: pdfBase64
+      body: JSON.stringify({
+        filename: fileName,
+        pdf_base64: pdfBase64
+      })
     };
 
   } catch (error) {
