@@ -31,11 +31,30 @@ function createGmailClient(credentials) {
 
 /**
  * 検索クエリを構築
+ * @param {Object} params
+ * @param {string} params.from - 送信者フィルタ
+ * @param {string} params.subject - 件名フィルタ
+ * @param {string} params.year_month - 年月フィルタ (YYYY-MM形式)
+ * @param {boolean} params.has_attachment - 添付ファイルありのみ
  */
-function buildSearchQuery({ from, subject, has_attachment = true }) {
+function buildSearchQuery({ from, subject, year_month, has_attachment = true }) {
   const queryParts = [];
   if (from) queryParts.push(`from:${from}`);
   if (subject) queryParts.push(`subject:${subject}`);
+
+  // 年月フィルタ (YYYY-MM形式)
+  if (year_month) {
+    const [year, month] = year_month.split('-').map(Number);
+    // 月初日
+    const startDate = `${year}/${month}/1`;
+    // 翌月初日（月末までを含めるため）
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const endDate = `${nextYear}/${nextMonth}/1`;
+    queryParts.push(`after:${startDate}`);
+    queryParts.push(`before:${endDate}`);
+  }
+
   if (has_attachment) queryParts.push('has:attachment');
   return queryParts.join(' ');
 }
@@ -97,7 +116,7 @@ export const handler = async (event) => {
   try {
     // 入力パース
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {};
-    const { from, subject, message_id, max_messages = 10 } = body;
+    const { from, subject, year_month, message_id, max_messages = 10 } = body;
 
     // バリデーション
     if (!from && !subject && !message_id) {
@@ -126,7 +145,7 @@ export const handler = async (event) => {
       console.log(`Step 3: Using specified message ID: ${message_id}`);
       messageIds = [message_id];
     } else {
-      const query = buildSearchQuery({ from, subject });
+      const query = buildSearchQuery({ from, subject, year_month });
       console.log(`Step 3: Searching messages with query: ${query}`);
 
       const listResponse = await gmail.users.messages.list({

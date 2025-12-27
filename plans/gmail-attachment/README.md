@@ -1,9 +1,34 @@
-# Gmail添付ファイル取得Lambda関数 - 実装計画
+# Gmail添付ファイル取得Lambda関数
 
 ## 概要
 
-Gmail APIを使用してメールの添付ファイルを取得するLambda関数を新規作成します。
-既存のnuro-invoice関数のパターンに従います。
+Gmail APIを使用してメールの添付ファイルを取得するLambda関数です。
+特定の送信者や件名でメールをフィルタし、添付ファイルをBase64形式で取得できます。
+
+## デプロイ済みAPI情報
+
+| 項目 | 値 |
+|------|-----|
+| Endpoint | `https://tk8qbp0jw2.execute-api.ap-northeast-1.amazonaws.com/Prod/gmail/attachments` |
+| Method | POST |
+| API Key Header | `x-api-key` |
+| リージョン | ap-northeast-1 |
+
+### 使用例
+
+```bash
+curl -X POST \
+  https://tk8qbp0jw2.execute-api.ap-northeast-1.amazonaws.com/Prod/gmail/attachments \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"from": "billing@example.com", "max_messages": 5}'
+```
+
+### APIキーの取得
+
+```bash
+aws apigateway get-api-key --api-key zhh1ei9ed1 --include-value --region ap-northeast-1 --query 'value' --output text
+```
 
 ## ディレクトリ構成
 
@@ -75,26 +100,30 @@ functions/gmail-attachment/
 ## 実装ステップ
 
 ### Step 1: プロジェクト構造作成
-- [ ] `functions/gmail-attachment/` ディレクトリ作成
-- [ ] `package.json` 作成
-- [ ] `index.mjs` エントリーポイント作成
+- [x] `functions/gmail-attachment/` ディレクトリ作成
+- [x] `package.json` 作成
+- [x] `index.mjs` エントリーポイント作成
 
 ### Step 2: メインハンドラー実装 (`src/index.mjs`)
-- [ ] 入力バリデーション
-- [ ] Secrets Manager連携
-- [ ] OAuth2認証（googleapis使用）
-- [ ] Gmail APIメッセージ検索
-- [ ] 添付ファイル取得
-- [ ] エラーハンドリング
+- [x] 入力バリデーション
+- [x] Secrets Manager連携
+- [x] OAuth2認証（googleapis使用）
+- [x] Gmail APIメッセージ検索
+- [x] 添付ファイル取得
+- [x] エラーハンドリング
 
 ### Step 3: テストスクリプト作成
-- [ ] `tests/manual-run.mjs` 作成
-- [ ] `tests/setup-oauth.mjs` 作成（初回トークン取得用）
+- [x] `tests/manual-run.mjs` 作成
+- [x] `tests/setup-oauth.mjs` 作成（初回トークン取得用）
 
 ### Step 4: SAMテンプレート作成
-- [ ] `template.yaml` 作成
-- [ ] Secrets Manager IAMポリシー設定
-- [ ] API Gateway設定
+- [x] `template.yaml` 作成
+- [x] Secrets Manager IAMポリシー設定
+- [x] API Gateway設定
+
+### Step 5: デプロイ
+- [x] SAMビルド・デプロイ完了
+- [x] API Gateway動作確認済み
 
 ## 変更対象ファイル
 
